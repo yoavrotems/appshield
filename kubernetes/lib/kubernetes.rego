@@ -204,7 +204,6 @@ host_aliases[host_alias] {
 tillerDeployed[container] {
 	allContainers := containers[_]
 	checkMetadata(metadata)
-	trace(sprintf("metadata = %v and its present: %V",[metadata, checkMetadata(metadata)]))
 	container := allContainers.name
 }
 
@@ -212,7 +211,6 @@ tillerDeployed[container] {
 tillerDeployed[container] {
 	allContainers := containers[_]
 	contains(allContainers.image, "tiller")
-	trace(sprintf("Image name = %v and its contains tiller: %v",[allContainers.image, contains(allContainers.image, "tiller")]))
 	container := allContainers.name
 }
 
@@ -220,7 +218,6 @@ tillerDeployed[container] {
 tillerDeployed[container] {
 	allPods := pods[_]
 	checkMetadata(allPods.metadata)
-	trace(sprintf("Pods metadata is %v and its contains tiller: %V",[allPods.metadata, checkMetadata(allPods.metadata)]))
 	container := allPods.metadata.name
 }
 
