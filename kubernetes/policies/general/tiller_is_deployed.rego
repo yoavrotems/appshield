@@ -1,4 +1,4 @@
-package appshield.kubernetes.KSV102
+package appshield.kubernetes.KSV103
 
 import data.lib.kubernetes
 
@@ -12,32 +12,15 @@ __rego_metadata__ := {
 	"recommended_actions": "TBD",
 }
 
-# Get all containers and check kubernetes metadata for tiller
-tillerDeployed[container] {
-	allContainers := kubernetes.containers[_]
-	checkMetadata(kubernetes.metadata)
-	container := allContainers.name
-}
-
-# Get all containers and check each image for tiller
-tillerDeployed[container] {
-	allContainers := kubernetes.containers[_]
-	contains(allContainers.image, "tiller")
-	container := allContainers.name
-}
-
-# Get all pods and check each metadata for tiller
-tillerDeployed[container] {
-	allPods := kubernetes.pods[_]
-	checkMetadata(allPods.metadata)
-	container := allPods.metadata.name
+isTiller[container] {
+	container := kubernetes.tillerDeployed[_]
 }
 
 deny[res] {
-	tillerDeployedContainers = tillerDeployed
+	tillerDeployedContainers = isTiller
 	count(tillerDeployedContainers) > 0
 
-	msg := kubernetes.format(sprintf("container %s of %s %s in %s namespace shouldn't have tiller deployed", [tillerDeployed[_], lower(kubernetes.kind), kubernetes.name, kubernetes.namespace]))
+	msg := kubernetes.format(sprintf("container %s of %s %s in %s namespace shouldn't have tiller deployed", [isTiller[_], lower(kubernetes.kind), kubernetes.name, kubernetes.namespace]))
 
 	res := {
 		"msg": msg,
@@ -46,19 +29,4 @@ deny[res] {
 		"severity": __rego_metadata__.severity,
 		"type": __rego_metadata__.type,
 	}
-}
-
-# Check for tiller in name field 
-checkMetadata(metadata) {
-	contains(metadata.name, "tiller")
-}
-
-# Check for tiller if app is helm
-checkMetadata(metadata) {
-	object.get(metadata.labels, "app", "undefined") == "helm"
-}
-
-# Check for tiller in labels.name field
-checkMetadata(metadata) {
-	contains(object.get(metadata.labels, "name", "undefined"), "tiller")
 }
