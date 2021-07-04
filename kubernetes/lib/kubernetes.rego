@@ -36,6 +36,8 @@ kind = object.kind
 
 apiVersion = object.apiVersion
 
+metadata = object.metadata
+
 is_service {
 	kind = "Service"
 }
@@ -196,4 +198,46 @@ host_pids[host_pid] {
 host_aliases[host_alias] {
 	pods[pod]
 	host_alias = pod.spec
+}
+
+# Get all containers and check kubernetes metadata for tiller
+tillerDeployed[container] {
+	allContainers := containers[_]
+	checkMetadata(metadata)
+	trace(sprintf("metadata = %v and its present: %V",[metadata, checkMetadata(metadata)]))
+	container := allContainers.name
+}
+
+# Get all containers and check each image for tiller
+tillerDeployed[container] {
+	allContainers := containers[_]
+	contains(allContainers.image, "tiller")
+	trace(sprintf("Image name = %v and its contains tiller: %v",[allContainers.image, contains(allContainers.image, "tiller")]))
+	container := allContainers.name
+}
+
+# Get all pods and check each metadata for tiller
+tillerDeployed[container] {
+	allPods := pods[_]
+	checkMetadata(allPods.metadata)
+	trace(sprintf("Pods metadata is %v and its contains tiller: %V",[allPods.metadata, checkMetadata(allPods.metadata)]))
+	container := allPods.metadata.name
+}
+
+
+# Check for tiller in name field 
+checkMetadata(metadata) {
+	contains(metadata.name, "tiller")
+}
+
+# Check for tiller if app is helm
+checkMetadata(metadata) {
+	has_field(metadata.labels, "app")
+	contains(metadata.labels.app, "helm")
+}
+
+# Check for tiller in labels.name field
+checkMetadata(metadata) {
+	has_field(metadata.labels, "name")
+	contains(metadata.labels.name, "tiller")
 }
