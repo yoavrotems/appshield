@@ -1,7 +1,6 @@
 package appshield.kubernetes.KSV102
 
 import data.lib.kubernetes
-import data.lib.utils
 
 __rego_metadata__ := {
 	"id": "KSV102",
@@ -31,24 +30,14 @@ tillerDeployed[container] {
 tillerDeployed[container] {
 	allPods := kubernetes.pods[_]
 	checkMetadata(allPods.metadata)
-	container := allPods.name
-}
-
-getNoTiller[container] {
-	container := kubernetes.containers[_].name
-	not tillerDeployed[container]
-}
-
-# checkRequiredDropCapabilities is true if requiredDropCapabilities does include 'ALL' or 'NET_RAW'
-# or if requiredDropCapabilities drop is not specified at all.
-CheckNoTiller {
-	count(getNoTiller) > 0
+	container := allPods.metadata.name
 }
 
 deny[res] {
-	CheckNoTiller
+	tillerDeployedContainers = tillerDeployed
+	count(tillerDeployedContainers) > 0
 
-	msg := kubernetes.format(sprintf("container %s of %s %s in %s namespace should have tiller deployed", [getNoTiller[_], lower(kubernetes.kind), kubernetes.name, kubernetes.namespace]))
+	msg := kubernetes.format(sprintf("container %s of %s %s in %s namespace shouldn't have tiller deployed", [tillerDeployed[_], lower(kubernetes.kind), kubernetes.name, kubernetes.namespace]))
 
 	res := {
 		"msg": msg,
